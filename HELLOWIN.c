@@ -102,6 +102,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	//在严格的子父级窗口关系之下，最小化子窗口会让子窗口缩小到父窗口的右下角，非严格则缩小到系统桌面的右下角。
 
+	//非严格状态下两个子窗口的移动不会产生影响，严格状态下会产生影响，因为移动没有触发WM_PAINT消息
+
 	//SetParent(c, f); 此函数会实现设置WS_CHILD一样的效果，但是不会影响窗口的属性标位，如果需要保持一致那么就需要自己设置
 	hwndChild = CreateWindow(szAppNameChild,
 		TEXT("The hellow program Child"),
