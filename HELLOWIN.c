@@ -2,6 +2,7 @@
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK WndProcChild(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK WndProcChild2(HWND, UINT, WPARAM, LPARAM);
 
 
 HWND f, c;
@@ -12,10 +13,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	static char szAppNameChild[] = TEXT("HelloWinChild");
 	HWND hwnd;
 	HWND hwndChild;
+	HWND hwndChild2;
 	MSG msg;
 	WNDCLASS wndclass;
 	WNDCLASS wndclassChild;
-
+	WNDCLASS wndclassChild2;
 	wndclass.style = CS_HREDRAW | CS_VREDRAW;
 	wndclass.lpfnWndProc = WndProc;
 	wndclass.cbClsExtra = 0;
@@ -61,13 +63,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	wndclassChild.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	wndclassChild.lpszMenuName = NULL;
 	wndclassChild.lpszClassName = szAppNameChild;
-
+	
 	if (!RegisterClass(&wndclassChild))
 	{
 		MessageBox(NULL, TEXT("This program requires windows NT!"),
 			szAppNameChild, MB_ICONERROR);
 		return 0;
 	}
+
+	wndclassChild2.style = CS_HREDRAW | CS_VREDRAW;
+	wndclassChild2.lpfnWndProc = WndProcChild2;
+	wndclassChild2.cbClsExtra = 0;
+	wndclassChild2.cbWndExtra = 0;
+	wndclassChild2.hInstance = hInstance;
+	wndclassChild2.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wndclassChild2.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndclassChild2.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+	wndclassChild2.lpszMenuName = NULL;
+	wndclassChild2.lpszClassName = TEXT("child2");
+	if (!RegisterClass(&wndclassChild2))
+	{
+		MessageBox(NULL, TEXT("This program requires windows NT!"),
+			TEXT("child2"), MB_ICONERROR);
+		return 0;
+	}
+
+
+
 
 	//关联子父级窗口
 
@@ -111,6 +133,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	ShowWindow(hwndChild, iCmdShow);
 	UpdateWindow(hwndChild);
 	//子窗口创建结束
+
+	//用于创建两个子窗口，观察是否有影响
+	hwndChild2 = CreateWindow(TEXT("child2"),
+		TEXT("child2"),
+		WS_OVERLAPPEDWINDOW | WS_CHILD,
+		300,
+		300,
+		300,
+		200,
+		hwnd,
+		NULL,
+		hInstance,
+		NULL);
+	ShowWindow(hwndChild2, iCmdShow);
+	UpdateWindow(hwndChild2);
+
+
+
 
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
@@ -189,6 +229,40 @@ LRESULT CALLBACK WndProcChild(HWND hwnd, UINT message,
 		GetClientRect(hwnd, &rect);
 
 		DrawText(hdc, TEXT("Hello, 这是子窗口!"), -1, &rect,
+			DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+
+		EndPaint(hwnd, &ps);
+		return 0;
+
+
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
+	}
+	return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+LRESULT CALLBACK WndProcChild2(HWND hwnd, UINT message,
+	WPARAM wParam, LPARAM lParam)
+{
+	HDC hdc;
+	PAINTSTRUCT ps;
+	RECT rect;
+
+	switch (message)
+	{
+	case WM_CREATE:
+		return 0;
+
+	case WM_LBUTTONDOWN:
+		MessageBox(NULL, TEXT("这是子窗口2，左键按下!"),
+			"子窗口2", MB_OKCANCEL);
+	case WM_PAINT:
+		hdc = BeginPaint(hwnd, &ps);
+
+		GetClientRect(hwnd, &rect);
+
+		DrawText(hdc, TEXT("Hello, 22这是子窗口2!"), -1, &rect,
 			DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 
 		EndPaint(hwnd, &ps);
