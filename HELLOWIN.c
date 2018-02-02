@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <stdio.h>
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK WndProcChild(HWND, UINT, WPARAM, LPARAM);
@@ -51,7 +52,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	ShowWindow(hwnd, iCmdShow);
 	UpdateWindow(hwnd);
 
-
 	//创建子窗口
 	wndclassChild.style = CS_HREDRAW | CS_VREDRAW;
 	wndclassChild.lpfnWndProc = WndProcChild;
@@ -63,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	wndclassChild.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	wndclassChild.lpszMenuName = NULL;
 	wndclassChild.lpszClassName = szAppNameChild;
-	
+
 	if (!RegisterClass(&wndclassChild))
 	{
 		MessageBox(NULL, TEXT("This program requires windows NT!"),
@@ -105,9 +105,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//非严格状态下两个子窗口的移动不会产生影响，严格状态下会产生影响，因为移动没有触发WM_PAINT消息
 
 	//SetParent(c, f); 此函数会实现设置WS_CHILD一样的效果，但是不会影响窗口的属性标位，如果需要保持一致那么就需要自己设置
+	
+	//严格和非严格子父级情况下最小化父窗口不会触发子窗口的最小化消息
 	hwndChild = CreateWindow(szAppNameChild,
 		TEXT("The hellow program Child"),
-		WS_OVERLAPPEDWINDOW|WS_CHILD,
+		WS_OVERLAPPEDWINDOW | WS_CHILD,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		300,
@@ -136,10 +138,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	UpdateWindow(hwndChild);
 	//子窗口创建结束
 
+	//**WS_CLIPSIBLINGS 属性设置之后就会减小Z序，其他同属窗口在其上方
+
 	//用于创建两个子窗口，观察是否有影响
 	hwndChild2 = CreateWindow(TEXT("child2"),
 		TEXT("child2"),
-		WS_OVERLAPPEDWINDOW | WS_CHILD,
+		WS_OVERLAPPEDWINDOW ,
 		300,
 		300,
 		300,
@@ -177,9 +181,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		return 0;
 
 	case WM_LBUTTONDOWN:
-		
 		SetParent(c, f);//后设置parentWnd,
-
 		MessageBox(NULL, TEXT("这是父窗口，左键按下!,设置父子窗口关系"),
 			"父窗口", MB_OKCANCEL);
 		return 0;
@@ -191,15 +193,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 
 	case WM_PAINT:
 		hdc = BeginPaint(hwnd, &ps);
-
 		GetClientRect(hwnd, &rect);
-
 		DrawText(hdc, TEXT("Hello, 这是父窗口!"), -1, &rect,
 			DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 
 		EndPaint(hwnd, &ps);
 		return 0;
+	case WM_SYSCOMMAND:
+		switch (wParam)
+		{
+		case SC_MINIMIZE:
+			MessageBox(NULL, TEXT("最小化父窗口!"),
+				"最小化父窗口", MB_OKCANCEL);
+			break;
 
+		default:
+			break;
+		}
+		break;
 	case WM_CHAR:
 		chCharCode = (TCHAR)wParam;
 		return 0;
@@ -236,7 +247,18 @@ LRESULT CALLBACK WndProcChild(HWND hwnd, UINT message,
 		EndPaint(hwnd, &ps);
 		return 0;
 
+	case WM_SYSCOMMAND:
+		switch (wParam)
+		{
+		case SC_MINIMIZE:
+			MessageBox(NULL, TEXT("最小化子1!"),
+				"最小化子1窗口", MB_OKCANCEL);
+			break;
 
+		default:
+			break;
+		}
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
@@ -270,6 +292,19 @@ LRESULT CALLBACK WndProcChild2(HWND hwnd, UINT message,
 		EndPaint(hwnd, &ps);
 		return 0;
 
+
+	case WM_SYSCOMMAND:
+		switch (wParam)
+		{
+		case SC_MINIMIZE:
+			MessageBox(NULL, TEXT("最小化子2!"),
+				"最小化子2窗口", MB_OKCANCEL);
+			break;
+
+		default:
+			break;
+		}
+		break;
 
 	case WM_DESTROY:
 		PostQuitMessage(0);
